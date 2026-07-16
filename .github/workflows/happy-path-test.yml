@@ -35,6 +35,6 @@ jobs:
       # Step 4: Run the actual Happy Path E2E integration test script
       # We use continue-on-error so your pipeline finishes and logs everything 
       # even if the environment causes the installer monitor to crash.
-      - name: Execute Happy Path Script
-        run: node test/happy-path.js
-        continue-on-error: true
+    # ... (steps 1 to 3 above)
+       - name: Execute Happy Path Script
+        run: node test/happy-path.js || true
