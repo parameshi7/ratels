@@ -1,0 +1,35 @@
+name: Security & Code Quality
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  code-sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Scan for accidental hardcoded secrets/API keys
+      - name: Secret Detection Scanner
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+        continue-on-error: true # Alerts your team without hard-blocking basic PR merges
+
+      # Lints your JS files if ESLint is defined in package.json
+      - name: Lint Code
+        run: npm run lint --if-present
