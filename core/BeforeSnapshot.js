@@ -44,6 +44,45 @@ function collectPath() {
   return raw.split(separator).filter(Boolean);
 }
 
+/**
+ * Collects the contents of common shell configuration files, so
+ * tampering (e.g. an injected malicious alias or PATH prepend) can be
+ * detected even if it doesn't show up as a running-process or env-var
+ * change at capture time. Missing files are simply omitted.
+ */
+function collectShellConfigFiles() {
+  const home = os.homedir();
+  const candidates = [
+    '.bashrc',
+    '.bash_profile',
+    '.bash_login',
+    '.profile',
+    '.zshrc',
+    '.zprofile',
+    '.zshenv',
+    '.config/fish/config.fish',
+  ].map((rel) => path.join(home, rel));
+
+  // System-wide files matter too — PATH hijacking doesn't have to be per-user.
+  const systemWide = ['/etc/profile', '/etc/bashrc', '/etc/zshrc'];
+
+  const files = {};
+  for (const filePath of [...candidates, ...systemWide]) {
+    try {
+      const stat = fs.statSync(filePath);
+      if (!stat.isFile()) continue;
+      files[filePath] = {
+        content: fs.readFileSync(filePath, 'utf8'),
+        size: stat.size,
+        mtime: stat.mtime.toISOString(),
+      };
+    } catch {
+      // File doesn't exist or isn't readable — that's a valid state, just skip it.
+    }
+  }
+  return files;
+}
+
 /** Collects a snapshot of currently running processes (name + pid only). */
 async function collectProcesses(osId) {
   if (osId === 'windows') {
@@ -150,6 +189,7 @@ async function captureBeforeSnapshot() {
     state: {
       env: collectEnvVars(),
       path: collectPath(),
+      shellConfigFiles: collectShellConfigFiles(),
       processes,
       network,
       tempFiles: collectTempFiles(),
@@ -165,6 +205,7 @@ module.exports = {
   // diff in A9.
   collectEnvVars,
   collectPath,
+  collectShellConfigFiles,
   collectProcesses,
   collectNetworkPorts,
   collectTempFiles,
