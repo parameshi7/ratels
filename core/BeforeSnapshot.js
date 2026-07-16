@@ -159,6 +159,15 @@ async function captureBeforeSnapshot() {
 
 module.exports = {
   captureBeforeSnapshot,
+  // Exported for reuse by AfterSnapshot.js (and future collectors in
+  // A6/A7/A8/G1/G2) so "before" and "after" snapshots stay identical
+  // in shape and collection method — a prerequisite for a meaningful
+  // diff in A9.
+  collectEnvVars,
+  collectPath,
+  collectProcesses,
+  collectNetworkPorts,
+  collectTempFiles,
 };
 
 // Allow running this file directly for a quick manual check:
