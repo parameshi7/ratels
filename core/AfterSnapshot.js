@@ -9,17 +9,17 @@
 // method, just a different point in time and type: 'after'. That
 // consistency is what makes A9's diff engine meaningful.
 
-'use strict';
+"use strict";
 
-const { detectOs } = require('./OsDetection');
-const { detectPackageManagers } = require('./PackageManagerDetection');
+const { detectOs } = require("./OsDetection");
+const { detectPackageManagers } = require("./PackageManagerDetection");
 const {
   collectEnvVars,
   collectPath,
   collectProcesses,
   collectNetworkPorts,
   collectTempFiles,
-} = require('./BeforeSnapshot');
+} = require("./BeforeSnapshot");
 
 /**
  * Captures a full "after" snapshot of the system, once installation
@@ -42,7 +42,7 @@ async function captureAfterSnapshot(options = {}) {
 
   return {
     id: `after-${Date.now()}`,
-    type: 'after',
+    type: "after",
     beforeId: options.beforeId || null,
     capturedAt: new Date().toISOString(),
     os: osInfo,
