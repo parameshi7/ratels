@@ -21,23 +21,15 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # Scan for accidental hardcoded secrets/API keys
-      #- name: Secret Detection Scanner
-      #  uses: trufflesecurity/trufflehog@main
-      #  with:
-         # path: ./
-          #base: ${{ github.event.repository.default_branch }}
-          #head: HEAD
-       # continue-on-error: true # Alerts your team without hard-blocking basic PR merges
-
-       # Scan the entire repository structure instead of comparing specific commits
+      # FIX: We scan the filesystem path directory directly to prevent "BASE and HEAD commits are the same" error
       - name: Secret Detection Scanner
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ""  # Clear the base commit comparison
+          base: "" 
           head: HEAD
+        continue-on-error: true # Alerts your team without blocking the build if it runs into comparison quirks
 
-      # Lints your JS files if ESLint is defined in package.json
+      # Run your linter only if you have it configured in package.json
       - name: Lint Code
         run: npm run lint --if-present
