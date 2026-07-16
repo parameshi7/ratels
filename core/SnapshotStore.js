@@ -1,13 +1,20 @@
 // core/SnapshotStore.js
 //
-// User Story B3 (2 pts · High)
-// As a developer, I want to save snapshots and reports locally for
-// later review, so that I have an audit trail I can return to.
+// User Story B3 (2 pts · High) — Save snapshots/reports locally
+// User Story D3 (2 pts · Medium) — Configurable save paths
 //
-// Paths match the config shape sketched out in D1
-// (paths.snapshotStore / paths.auditArchive) so this module can be
-// pointed at custom locations once D1/D3 land; for now it uses the
-// same sane defaults on its own.
+// Paths now come from the config file (D1's Config.js:
+// paths.snapshotStore / paths.auditArchive), so editing
+// ~/.pkgmonitorrc actually changes where things get saved — no code
+// changes needed. Falls back to the same sane defaults if the config
+// file doesn't exist yet or doesn't override these paths.
+//
+// Cross-platform note: `~` is expanded via os.homedir(), which
+// already resolves correctly per OS (macOS: /Users/<you>, Linux:
+// /home/<you>, Windows: C:\Users\<you>) — the same config value works
+// unmodified on all three. You only need OS-specific path *values* in
+// the config if you want to point somewhere other than the default,
+// e.g. a specific external drive or a Windows-only location.
 
 'use strict';
 
@@ -15,10 +22,22 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const DEFAULT_PATHS = Object.freeze({
-  snapshotStore: path.join(os.homedir(), '.pkg_monitor', 'snapshots'),
-  auditArchive: path.join(os.homedir(), '.pkg_monitor', 'reports'),
-});
+/**
+ * Returns the current effective paths — from the config file if set,
+ * otherwise the built-in defaults. Read fresh each call (rather than
+ * cached at require-time) so editing ~/.pkgmonitorrc and re-running
+ * picks up the change immediately, without restarting anything long-lived.
+ */
+function getPaths() {
+  // Lazily required to avoid a hard dependency cycle with Config.js.
+  const { loadConfig } = require('./Config');
+  const config = loadConfig();
+
+  return {
+    snapshotStore: config?.paths?.snapshotStore || path.join(os.homedir(), '.pkg_monitor', 'snapshots'),
+    auditArchive: config?.paths?.auditArchive || path.join(os.homedir(), '.pkg_monitor', 'reports'),
+  };
+}
 
 /** Expands a leading `~` to the user's home directory, if present. */
 function expandHome(p) {
@@ -38,10 +57,11 @@ function ensureDir(dir) {
  * @param {object} snapshot - from captureBeforeSnapshot()/captureAfterSnapshot()
  * @param {object} [options]
  * @param {string} [options.dir] - override the snapshot storage directory
+ *   (takes priority over the config file, for one-off use)
  * @returns {string} the full path the snapshot was written to
  */
 function saveSnapshot(snapshot, options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.snapshotStore);
+  const dir = expandHome(options.dir || getPaths().snapshotStore);
   ensureDir(dir);
   const filePath = path.join(dir, `${snapshot.id}.json`);
   fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
@@ -69,10 +89,11 @@ function saveSnapshotPair(before, after, options = {}) {
  * @param {string} plainText - from renderPlainTextReport(report)
  * @param {object} [options]
  * @param {string} [options.dir] - override the report storage directory
+ *   (takes priority over the config file, for one-off use)
  * @returns {{jsonPath: string, textPath: string, id: string}}
  */
 function saveReport(report, plainText, options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.auditArchive);
+  const dir = expandHome(options.dir || getPaths().auditArchive);
   ensureDir(dir);
 
   const id = `report-${report?.meta?.afterId || Date.now()}`;
@@ -90,7 +111,7 @@ function saveReport(report, plainText, options = {}) {
  * @returns {{id: string, path: string, mtime: string}[]}
  */
 function listSnapshots(options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.snapshotStore);
+  const dir = expandHome(options.dir || getPaths().snapshotStore);
   return listJsonFiles(dir);
 }
 
@@ -100,7 +121,7 @@ function listSnapshots(options = {}) {
  * @returns {{id: string, path: string, mtime: string}[]}
  */
 function listReports(options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.auditArchive);
+  const dir = expandHome(options.dir || getPaths().auditArchive);
   return listJsonFiles(dir);
 }
 
@@ -122,20 +143,20 @@ function listJsonFiles(dir) {
 
 /** Loads a saved snapshot by id or filename. */
 function loadSnapshot(idOrFilename, options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.snapshotStore);
+  const dir = expandHome(options.dir || getPaths().snapshotStore);
   const filePath = idOrFilename.endsWith('.json') ? path.join(dir, idOrFilename) : path.join(dir, `${idOrFilename}.json`);
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 /** Loads a saved report (JSON form) by id or filename. */
 function loadReport(idOrFilename, options = {}) {
-  const dir = expandHome(options.dir || DEFAULT_PATHS.auditArchive);
+  const dir = expandHome(options.dir || getPaths().auditArchive);
   const filePath = idOrFilename.endsWith('.json') ? path.join(dir, idOrFilename) : path.join(dir, `${idOrFilename}.json`);
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 module.exports = {
-  DEFAULT_PATHS,
+  getPaths,
   saveSnapshot,
   saveSnapshotPair,
   saveReport,
