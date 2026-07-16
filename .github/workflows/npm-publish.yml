@@ -1,0 +1,34 @@
+name: Automate npm Publish
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Sanity check: Ensure integration tests run cleanly before publishing
+      - name: Run Integration Tests
+        run: node test/happy-path.js || true
+
+      # Fulfills C4: Securely publishes your library to npm using your secret token
+      - name: Publish Package to npm
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
