@@ -14,9 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Fulfills C5: Cross-platform OS matrix
+        # Cross-platform OS matrix
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # Fulfills C5: Multiple Node.js major versions
+        # Supported Node.js versions
         node-version: [18, 20, 22]
 
     steps:
@@ -32,10 +32,10 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # Fulfills C3: Automatically run the linter to block broken styles
+      # Automatically run the linter to catch formatting/style issues
       - name: Run Linter
         run: npm run lint --if-present
 
-      # Executes your happy-path integration tests (with || true wrapper to keep build green)
+      # Executes your happy-path integration test
       - name: Run Happy Path Integration Test
-        run: node test/happy-path.js || true
+        run: node test/happy-path.js
