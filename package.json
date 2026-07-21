@@ -1,17 +1,10 @@
 {
   "name": "ratels",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Supply Chain Security Monitor",
   "main": "cli.js",
   "bin": {
     "ratels": "./cli.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/parameshi7/ratels.git"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "scripts": {
     "test": "node core/OsDetection.js && node core/PackageManagerDetection.js && node core/BeforeSnapshot.js && node core/AfterSnapshot.js",
