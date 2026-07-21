@@ -6,6 +6,14 @@
   "bin": {
     "ratels": "./cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parameshi7/ratels.git"
+  },
+  "bugs": {
+    "url": "https://github.com/parameshi7/ratels/issues"
+  },
+  "homepage": "https://github.com/parameshi7/ratels#readme",
   "scripts": {
     "test": "node core/OsDetection.js && node core/PackageManagerDetection.js && node core/BeforeSnapshot.js && node core/AfterSnapshot.js",
     "test:integration": "node test/happy-path.js",
