@@ -11,7 +11,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # REQUIRED: Grants OIDC permissions needed for npm provenance signing
+    # ------------------------------------------------------------
+    # CRITICAL: Grants permission to mint OIDC tokens for provenance
+    # ------------------------------------------------------------
     permissions:
       contents: read
       id-token: write
@@ -23,18 +25,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      # Runs your end-to-end integration test before attempting publication
       - name: Run Integration Tests
         run: node test/happy-path.js || true
 
-      # Publishes the package to public npm registry with build provenance
       - name: Publish Package to npm
         run: npm publish --provenance --access public
         env:
